@@ -1,0 +1,10 @@
+dist: trusty
+sudo: false
+language: csharp
+mono: none
+dotnet: 1.0.4
+services:
+  - docker
+script:    
+  - dotnet restore ./VaderSharp/VaderSharp.Test/VaderSharp.Test.csproj
+  - dotnet test ./VaderSharp/VaderSharp.Test/VaderSharp.Test.csproj

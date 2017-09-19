@@ -21,6 +21,14 @@ dotnet test
 
 Now start refactoring!
 
+## watch tests
+
+If you want to run the tests on each change:
+
+```shell
+dotnet watch test
+```
+
 ## license
 
 Cleanvader is licensed under the [MIT License](https://github.com/bartw/cleanvader/blob/master/LICENSE).  

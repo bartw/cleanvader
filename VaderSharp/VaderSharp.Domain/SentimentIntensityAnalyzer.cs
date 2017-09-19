@@ -40,17 +40,17 @@ namespace VaderSharp.Domain
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public SentimentAnalysisResults PolarityScores(string input)
+        public SentimentAnalysisResults CalculatePolarityScores(string input)
         {
-            SentiText sentiText = new SentiText(input);
+            Sentence sentiText = new Sentence(input);
             IList<double> sentiments = new List<double>();
-            IList<string> wordsAndEmoticons = sentiText.WordsAndEmoticons;
+            IEnumerable<string> wordsAndEmoticons = sentiText.WordsAndEmoticons;
 
-            for (int i = 0; i < wordsAndEmoticons.Count; i++)
+            for (int i = 0; i < wordsAndEmoticons.Count(); i++)
             {
-                string item = wordsAndEmoticons[i];
+                string item = wordsAndEmoticons.ElementAt(i);
                 double valence = 0;
-                if (i < wordsAndEmoticons.Count - 1 && item.ToLower() == "kind" && wordsAndEmoticons[i + 1] == "of"
+                if (i < wordsAndEmoticons.Count() - 1 && item.ToLower() == "kind" && wordsAndEmoticons.ElementAt(i + 1) == "of"
                     || SentimentUtils.BoosterDict.ContainsKey(item.ToLower()))
                 {
                     sentiments.Add(valence);
@@ -64,7 +64,7 @@ namespace VaderSharp.Domain
             return ScoreValence(sentiments, input);
         }
 
-        private IList<double> SentimentValence(double valence, SentiText sentiText, string item, int i, IList<double> sentiments)
+        private IList<double> SentimentValence(double valence, Sentence sentiText, string item, int i, IList<double> sentiments)
         {
             string itemLowerCase = item.ToLower();
             if (!Lexicon.ContainsKey(itemLowerCase))
@@ -72,10 +72,10 @@ namespace VaderSharp.Domain
                 sentiments.Add(valence);
                 return sentiments;
             }
-            bool isCapDiff = sentiText.IsCapDifferential;
-            IList<string> wordsAndEmoticons = sentiText.WordsAndEmoticons;
+            bool isCapDiff = sentiText.AreSomeWordsInAllCapitals;
+            IEnumerable<string> wordsAndEmoticons = sentiText.WordsAndEmoticons;
             valence = Lexicon[itemLowerCase];
-            if (isCapDiff && item.IsUpper())
+            if (isCapDiff && item.IsAllCapitals())
             {
                 if (valence > 0)
                 {
@@ -89,9 +89,9 @@ namespace VaderSharp.Domain
 
             for (int startI = 0; startI < 3; startI++)
             {
-                if (i > startI && !Lexicon.ContainsKey(wordsAndEmoticons[i - (startI + 1)].ToLower()))
+                if (i > startI && !Lexicon.ContainsKey(wordsAndEmoticons.ElementAt(i - (startI + 1)).ToLower()))
                 {
-                    double s = SentimentUtils.ScalarIncDec(wordsAndEmoticons[i - (startI + 1)], valence, isCapDiff);
+                    double s = SentimentUtils.ScalarIncDec(wordsAndEmoticons.ElementAt(i - (startI + 1)), valence, isCapDiff);
                     if (startI == 1 && s != 0)
                         s = s * 0.95;
                     if (startI == 2 && s != 0)
@@ -113,7 +113,7 @@ namespace VaderSharp.Domain
             return sentiments;
         }
 
-        private IList<double> ButCheck(IList<string> wordsAndEmoticons, IList<double> sentiments)
+        private IList<double> ButCheck(IEnumerable<string> wordsAndEmoticons, IList<double> sentiments)
         {
             bool containsBUT = wordsAndEmoticons.Contains("BUT");
             bool containsbut = wordsAndEmoticons.Contains("but");
@@ -121,8 +121,8 @@ namespace VaderSharp.Domain
                 return sentiments;
 
             int butIndex = (containsBUT)
-                ? wordsAndEmoticons.IndexOf("BUT")
-                : wordsAndEmoticons.IndexOf("but");
+                ? wordsAndEmoticons.ToList().IndexOf("BUT")
+                : wordsAndEmoticons.ToList().IndexOf("but");
 
             for (int i = 0; i < sentiments.Count; i++)
             {
@@ -141,8 +141,9 @@ namespace VaderSharp.Domain
             return sentiments;
         }
 
-        private double LeastCheck(double valence, IList<string> wordsAndEmoticons, int i)
+        private double LeastCheck(double valence, IEnumerable<string> wordsAndEmoticonsEnumerable, int i)
         {
+            var wordsAndEmoticons = wordsAndEmoticonsEnumerable.ToList();
             if (i > 1 && !Lexicon.ContainsKey(wordsAndEmoticons[i - 1].ToLower()) &&
                 wordsAndEmoticons[i - 1].ToLower() == "least")
             {
@@ -160,34 +161,34 @@ namespace VaderSharp.Domain
             return valence;
         }
 
-        private double NeverCheck(double valence, IList<string> wordsAndEmoticons, int startI, int i)
+        private double NeverCheck(double valence, IEnumerable<string> wordsAndEmoticons, int startI, int i)
         {
             if (startI == 0)
             {
-                if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons[i - 1] }))
+                if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons.ElementAt(i - 1) }))
                     valence = valence * SentimentUtils.NScalar;
             }
             if (startI == 1)
             {
-                if (wordsAndEmoticons[i - 2] == "never" &&
-                    (wordsAndEmoticons[i - 1] == "so" || wordsAndEmoticons[i - 1] == "this"))
+                if (wordsAndEmoticons.ElementAt(i - 2) == "never" &&
+                    (wordsAndEmoticons.ElementAt(i - 1) == "so" || wordsAndEmoticons.ElementAt(i - 1) == "this"))
                 {
                     valence = valence * 1.5;
                 }
-                else if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons[i - (startI + 1)] }))
+                else if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons.ElementAt(i - (startI + 1)) }))
                 {
                     valence = valence * SentimentUtils.NScalar;
                 }
             }
             if (startI == 2)
             {
-                if (wordsAndEmoticons[i - 3] == "never"
-                    && (wordsAndEmoticons[i - 2] == "so" || wordsAndEmoticons[i - 2] == "this")
-                    || (wordsAndEmoticons[i - 1] == "so" || wordsAndEmoticons[i - 1] == "this"))
+                if (wordsAndEmoticons.ElementAt(i - 3) == "never"
+                    && (wordsAndEmoticons.ElementAt(i - 2) == "so" || wordsAndEmoticons.ElementAt(i - 2) == "this")
+                    || (wordsAndEmoticons.ElementAt(i - 1) == "so" || wordsAndEmoticons.ElementAt(i - 1) == "this"))
                 {
                     valence = valence * 1.25;
                 }
-                else if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons[i - (startI + 1)] }))
+                else if (SentimentUtils.Negated(new List<string> { wordsAndEmoticons.ElementAt(i - (startI + 1)) }))
                 {
                     valence = valence * SentimentUtils.NScalar;
                 }
@@ -196,8 +197,9 @@ namespace VaderSharp.Domain
             return valence;
         }
 
-        private double IdiomsCheck(double valence, IList<string> wordsAndEmoticons, int i)
+        private double IdiomsCheck(double valence, IEnumerable<string> wordsAndEmoticonsEnumerable, int i)
         {
+            var wordsAndEmoticons = wordsAndEmoticonsEnumerable.ToList();
             string oneZero = String.Format("{0} {1}", wordsAndEmoticons[i - 1], wordsAndEmoticons[i]);
 
             string twoOneZero = String.Format("{0} {1} {2}", wordsAndEmoticons[i - 2], wordsAndEmoticons[i - 1], wordsAndEmoticons[i]);

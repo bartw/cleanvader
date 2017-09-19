@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace VaderSharp.Domain
 {
@@ -172,18 +173,12 @@ namespace VaderSharp.Domain
         /// </summary>
         /// <param name="words"></param>
         /// <returns></returns>
-        public static bool AllCapDifferential(IList<string> words)
+        public static bool AreSomeWordsInAllCapitals(IEnumerable<string> words)
         {
-            int allCapWords = 0;
+            var anyWordInAllCapitals = words.Any(word => word.IsAllCapitals());
+            var notAllWordsInAllCapitals = words.All(word => !word.IsAllCapitals());
 
-            foreach (var word in words)
-            {
-                if (word.IsUpper())
-                    allCapWords++;
-            }
-
-            int capDifferential = words.Count - allCapWords;
-            return (capDifferential > 0 && capDifferential < words.Count);
+            return anyWordInAllCapitals && notAllWordsInAllCapitals;
         }
 
         /// <summary>
@@ -203,7 +198,7 @@ namespace VaderSharp.Domain
             if (valence < 0)
                 scalar *= -1;
 
-            if (word.IsUpper() && isCapDiff)
+            if (word.IsAllCapitals() && isCapDiff)
             {
                 scalar += (valence > 0) ? CIncr : -CIncr;
             }

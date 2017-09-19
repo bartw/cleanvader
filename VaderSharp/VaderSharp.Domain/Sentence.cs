@@ -5,18 +5,16 @@ using System.Text;
 
 namespace VaderSharp.Domain
 {
-    internal class SentiText
+    internal class Sentence
     {
-        private string Text { get; }
-        public IList<string> WordsAndEmoticons { get; }
-        public bool IsCapDifferential { get; }
+        public IEnumerable<string> WordsAndEmoticons { get; }
+        public bool AreSomeWordsInAllCapitals { get; }
 
-        public SentiText(string text)
+        public Sentence(string input)
         {
             //TODO: Encode in UTF-8 ?
-            Text = text;
-            WordsAndEmoticons = GetWordsAndEmoticons();
-            IsCapDifferential = SentimentUtils.AllCapDifferential(WordsAndEmoticons);
+            WordsAndEmoticons = GetWordsAndEmoticons(input);
+            AreSomeWordsInAllCapitals = SentimentUtils.AreSomeWordsInAllCapitals(WordsAndEmoticons);
         }
 
 
@@ -24,9 +22,9 @@ namespace VaderSharp.Domain
         /// Returns mapping of the form {'cat,': 'cat'}, {',cat': 'cat'}
         /// </summary>
         /// <returns></returns>
-        private Dictionary<string, string> WordsPlusPunc()
+        private Dictionary<string, string> WordsPlusPunc(string input)
         {
-            string noPuncText = Text.RemovePunctuation();
+            string noPuncText = input.RemovePunctuation();
             var wordsOnly = noPuncText.Split().Where(x=>x.Length > 1);
 
             //for each word in wordsOnly, get each possible variant of punclist before/after
@@ -51,10 +49,10 @@ namespace VaderSharp.Domain
         /// Removes leading and trailing punctuation. Leaves contractions and most emoticons.
         /// </summary>
         /// <returns></returns>
-        private IList<string> GetWordsAndEmoticons()
+        private IList<string> GetWordsAndEmoticons(string input)
         {
-            IList<string> wes = Text.Split().Where(x=> x.Length > 1).ToList();
-            Dictionary<string,string> wordsPuncDic = WordsPlusPunc();
+            IList<string> wes = input.Split().Where(x=> x.Length > 1).ToList();
+            Dictionary<string,string> wordsPuncDic = WordsPlusPunc(input);
             for (int i = 0; i < wes.Count; i++)
             {
                 if (wordsPuncDic.ContainsKey(wes[i]))
@@ -63,6 +61,5 @@ namespace VaderSharp.Domain
 
             return wes;
         }
-
     }
 }

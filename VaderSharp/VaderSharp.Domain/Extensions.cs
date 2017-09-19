@@ -12,7 +12,7 @@ namespace VaderSharp.Domain
         /// </summary>
         /// <param name="word"></param>
         /// <returns></returns>
-        public static bool IsUpper(this string word)
+        public static bool IsAllCapitals(this string word)
         {
             return !word.Any(char.IsLower);
         }
